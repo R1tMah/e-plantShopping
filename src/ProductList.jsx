@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import './ProductList.css'
 import CartItem from './CartItem';
+import { addItem } from './CartSlice'; 
+import { useDispatch } from 'react-redux';
 function ProductList({ onHomeClick }) {
+    const dispatch = useDispatch();
     const [showCart, setShowCart] = useState(false);
     const [showPlants, setShowPlants] = useState(false); // State to control the visibility of the About Us page
-
+    const [addedToCart, setAddedToCart] = useState({});
+    const calculateTotalQuantity = () => {
+        return CartItems ? CartItems.reduce((total, item) => total + item.quantity, 0) : 0;
+    };
     const plantsArray = [
         {
             category: "Air Purifying Plants",
@@ -247,7 +253,13 @@ function ProductList({ onHomeClick }) {
         setShowPlants(true); // Set showAboutUs to true when "About Us" link is clicked
         setShowCart(false); // Hide the cart when navigating to About Us
     };
+    const handleAddToCart = (plant) => {
+        // 1) Dispatch the plant object to your CartSlice’s addItem reducer
+        dispatch(addItem(plant));
 
+        // 2) Mark this plant as “added” locally so that we can disable its button
+        setAddedToCart((prev) => ({ ...prev, [plant.name]: true }));
+    };
     const handleContinueShopping = (e) => {
         e.preventDefault();
         setShowCart(false);
@@ -274,13 +286,41 @@ function ProductList({ onHomeClick }) {
             </div>
             {!showCart ? (
                 <div className="product-grid">
+                    {plantsArray.map((categoryObj) => (
+                        <React.Fragment key={categoryObj.category}>
+                        {/* Category Header */}
+                        <h2 className="category-title">{categoryObj.category}</h2>
 
+                        <div className="plant-category-row">
+                            {categoryObj.plants.map((plant) => (
+                            <div className="plant-card" key={plant.name}>
+                                <img
+                                src={plant.image}
+                                alt={plant.name}
+                                className="plant-thumbnail"
+                                />
+                                <h3 className="plant-name">{plant.name}</h3>
+                                <p className="plant-desc">{plant.description}</p>
+                                <p className="plant-cost">{plant.cost}</p>
 
-                </div>
-            ) : (
-                <CartItem onContinueShopping={handleContinueShopping} />
-            )}
-        </div>
+                                <button
+                                className="add-to-cart-btn"
+                                onClick={() => handleAddToCart(plant)}
+                                disabled={addedToCart[plant.name]}
+                                >
+                                {addedToCart[plant.name] ? 'Added' : 'Add to Cart'}
+                                </button>
+                            </div>
+                            ))}
+                        </div>
+                        </React.Fragment>
+                    ))}
+
+                            </div>
+                        ) : (
+                            <CartItem onContinueShopping={handleContinueShopping} />
+                        )}
+                    </div>
     );
 }
 
